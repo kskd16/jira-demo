@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<main class="p-8">
+  <div class="flex items-center justify-between mb-6">
+    <input type="text" placeholder="Search projects..." class="px-4 py-2 border rounded-md w-1/2">
+    <form method="GET" action="{{ url_for('projects_page') }}">
+      <select name="team_lead" class="px-4 py-2 border rounded-md" onchange="this.form.submit()">
+        <option value="" {% if not selected_lead_id %}selected{% endif %}>All Leads</option>
+        {% for lead in team_leads %}
+        <option value="{{ lead.id }}" {% if selected_lead_id == lead.id %}selected{% endif %}>{{ lead.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+   <!-- <button type="button" onclick="window.location.href='{{ url_for('create_project') }}'" class="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create Project</button>-->
+    <a href="{{ url_for('create_project') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Create Project</a>
+  </div>
+
+  <div class="space-y-4">
+    {% for project in projects %}
+    <div class="bg-white p-4 shadow rounded">
+      <h3 class="text-xl font-bold text-blue-600"><a href="{{ url_for('project_board', project_id=project.id) }}">{{ project.name }}</a></h3>
+      <p class="text-gray-600">{{ project.status }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

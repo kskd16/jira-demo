@@ -1,0 +1,128 @@
+{% extends "iframe_base.html" %}
+
+{% block title %}Project Board{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="p-6 flex flex-wrap gap-4 items-center justify-between">
+  <div class="flex gap-4 items-center">
+    <label for="ticket-type" class="text-lg font-medium text-gray-700">Filter by Type:</label>
+    <select id="ticket-type" class="px-4 py-2 border rounded-md">
+      <option value="all">All</option>
+      <option value="task">Task</option>
+      <option value="bug">Bug</option>
+      <option value="story">Story</option>
+    </select>
+  </div>
+  <input type="text" id="search-tickets" placeholder="Search tickets..." class="px-4 py-2 border rounded-md w-full max-w-md">
+  <a href="{{ url_for('create_ticket') }}{% if project %}?project={{ project.id }}{% endif %}" class="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create Ticket</a>
+</div>
+
+<!-- Kanban Board View -->
+<div class="flex gap-6 p-6 overflow-x-auto" id="kanban-board">
+  {% for column in ['To Do', 'In Progress', 'In Review', 'Done'] %}
+  <div class="kanban-column min-w-[320px] max-w-sm bg-white rounded-xl p-4 shadow" data-id="{{ column | lower | replace(' ', '') }}">
+    <h2 class="text-xl font-semibold text-gray-700 mb-3">{{ column }}</h2>
+    <div class="kanban-items flex flex-col gap-4" id="{{ column | lower | replace(' ', '') }}-items">
+      {% for ticket in tickets[column] %}
+      <div class="bg-{{ ticket.priority|lower|replace('high', 'red')|replace('medium', 'yellow')|replace('low', 'green') }}-100 p-4 rounded shadow text-gray-800" data-ticket-id="{{ ticket.id }}">
+        <div class="font-medium">{{ ticket.id }}: {{ ticket.title }}</div>
+        <div class="text-sm text-gray-600">Assigned to: {{ ticket.assignee }}</div>
+        <div class="text-xs text-gray-500">{{ ticket.type }} - {{ ticket.priority }}</div>
+        {% if current_user.role == 'admin' or (current_user.role == 'manager' and ticket.project and ticket.project.team_lead_id == current_user.id) %}
+        <div class="mt-2 flex justify-end">
+          <button 
+            onclick="window.location.href='{{ url_for('reassign_ticket', ticket_id=ticket.id) }}'" 
+            class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
+            Reassign
+          </button>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Create a toast notification function
+  function showToast(message, isError = false) {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg ${isError ? 'bg-red-500' : 'bg-green-500'} text-white`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.5s';
+      setTimeout(() => document.body.removeChild(toast), 500);
+    }, 3000);
+  }
+
+  // Initialize Sortable on each kanban column
+  document.querySelectorAll('.kanban-items').forEach(el => {
+    new Sortable(el, {
+      group: 'shared',
+      animation: 150,
+      ghostClass: 'bg-gray-200',
+      onEnd: function (evt) {
+        const ticketId = evt.item.getAttribute('data-ticket-id');
+        const newStatus = evt.to.parentElement.querySelector('h2').textContent.trim();
+        const originalStatus = evt.from.parentElement.querySelector('h2').textContent.trim();
+        
+        // Update ticket status via API
+        fetch(`/api/ticket/${ticketId}/status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.status === 'success') {
+            showToast(`Ticket moved to ${newStatus}`);
+          } else {
+            showToast(`Failed: ${data.message}`, true);
+            // Revert the drag if the update failed
+            evt.from.appendChild(evt.item);
+          }
+        })
+        .catch(error => {
+          console.error('Error updating ticket status:', error);
+          showToast('Permission denied or server error', true);
+          // Revert the drag if there was an error
+          evt.from.appendChild(evt.item);
+        });
+      }
+    });
+  });
+
+  document.getElementById('ticket-type').addEventListener('change', function () {
+    const selected = this.value;
+    document.querySelectorAll('.kanban-items > div').forEach(ticket => {
+      const type = ticket.querySelector('.font-medium').textContent.toLowerCase();
+      const isMatch = selected === 'all' || type.includes(selected);
+      ticket.style.display = isMatch ? 'block' : 'none';
+    });
+  });
+
+  document.getElementById('search-tickets').addEventListener('input', function () {
+    const search = this.value.toLowerCase();
+    document.querySelectorAll('.kanban-items > div').forEach(ticket => {
+      const text = ticket.textContent.toLowerCase();
+      ticket.style.display = text.includes(search) ? 'block' : 'none';
+    });
+  });
+</script>
+{% endblock %}

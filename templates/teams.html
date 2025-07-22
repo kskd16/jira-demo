@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <input type="text" placeholder="Search team members..." class="px-4 py-2 border rounded-md w-1/2">
+  <div class="space-x-4">
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('create_team') }}" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Create Team</a>
+    {% endif %}
+    <button onclick="toggleAddPeopleForm()" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">Add People</button>
+  </div>
+</div>
+
+<h2 class="text-2xl font-semibold text-gray-800 mb-4">People you work with</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+  {% for person in people %}
+  <div class="bg-white shadow rounded p-4 flex items-center gap-4">
+    <img src="https://via.placeholder.com/60" alt="User" class="w-14 h-14 rounded-full">
+    <div>
+      <h3 class="text-lg font-semibold text-blue-700">{{ person.name }}</h3>
+      <p class="text-gray-600">{{ person.role }}</p>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-span-full text-center py-8">
+    <p class="text-gray-500">No team members available.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Add People Modal -->
+<div id="addPeopleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+    <h2 class="text-2xl font-bold mb-4 text-blue-600">Add People</h2>
+    <input id="addPersonEmail" type="email" placeholder="Enter email address..." class="w-full px-4 py-2 border rounded-md mb-4">
+    <div class="flex justify-end space-x-4">
+      <button onclick="toggleAddPeopleForm()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancel</button>
+      <button onclick="addPerson()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Team Modal -->
+<div id="createTeamModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+    <h2 class="text-2xl font-bold mb-4 text-green-600">Create Team</h2>
+    <input id="teamName" type="text" placeholder="Team name" class="w-full px-4 py-2 border rounded-md mb-4">
+    <input id="projectName" type="text" placeholder="Project name" class="w-full px-4 py-2 border rounded-md mb-4">
+    <label class="block mb-2 font-medium text-gray-700">Add People:</label>
+    <input id="teamMembers" type="text" placeholder="Comma-separated emails" class="w-full px-4 py-2 border rounded-md mb-4">
+    <div class="flex justify-end space-x-4">
+      <button onclick="toggleCreateTeamForm()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancel</button>
+      <button onclick="createTeam()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Create</button>
+    </div>
+  </div>
+</div>
+
+<h2 class="text-2xl font-semibold text-gray-800 my-6">Your Teams</h2>
+<div class="space-y-4">
+  {% for team_name, team_members in teams.items() %}
+  <div class="bg-white shadow rounded p-4">
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="text-xl font-semibold text-green-700">{{ team_name }}</h3>
+      {% if current_user.role == 'admin' or current_user.role == 'manager' %}
+      <a href="{{ url_for('team_pending_users', team_id=team_members[0].team_id if team_members else 1) }}" 
+         class="text-sm text-blue-600 hover:underline">View Pending Users</a>
+      {% endif %}
+    </div>
+    <div class="flex gap-4 flex-wrap">
+      {% for member in team_members %}
+      <div class="flex items-center gap-3">
+        <img src="https://via.placeholder.com/60" class="w-12 h-12 rounded-full">
+        <div>
+          <span class="text-gray-700 font-medium">{{ member.name }}</span>
+          <p class="text-xs text-gray-500">{{ member.role }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white shadow rounded p-4 text-center">
+    <p class="text-gray-500">No teams available.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  function toggleDropdown() {
+    document.getElementById('dropdown').classList.toggle('hidden');
+  }
+
+  function toggleAddPeopleForm() {
+    document.getElementById('addPeopleModal').classList.toggle('hidden');
+  }
+
+  function toggleCreateTeamForm() {
+    document.getElementById('createTeamModal').classList.toggle('hidden');
+  }
+
+  // No need to fetch people and teams as they're now rendered server-side
+
+  async function createTeam() {
+    const name = document.getElementById('teamName').value;
+    const project = document.getElementById('projectName').value;
+    const members = document.getElementById('teamMembers').value.split(',').map(m => m.trim());
+    await fetch('/api/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, project, members })
+    });
+    toggleCreateTeamForm();
+    fetchTeams();
+  }
+
+  async function addPerson() {
+    const email = document.getElementById('addPersonEmail').value;
+    await fetch('/api/people', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    toggleAddPeopleForm();
+    fetchPeople();
+  }
+
+  // Page now uses server-side rendering
+</script>
+{% endblock %}

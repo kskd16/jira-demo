@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<main class="p-10">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Create New Ticket</h2>
+  <form method="POST" action="{{ url_for('create_ticket') }}" class="space-y-6">
+    <div>
+      <label for="title" class="block text-lg font-medium mb-2">Title</label>
+      <input type="text" id="title" name="title" placeholder="Enter ticket title..." class="w-full px-4 py-2 border rounded-md" required>
+    </div>
+
+    <div>
+      <label for="description" class="block text-lg font-medium mb-2">Description</label>
+      <textarea id="description" name="description" rows="4" placeholder="Describe the issue/task/story..." class="w-full px-4 py-2 border rounded-md" required></textarea>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="type" class="block text-lg font-medium mb-2">Type</label>
+        <select id="type" name="type" class="w-full px-4 py-2 border rounded-md">
+          <option value="task">Task</option>
+          <option value="bug">Bug</option>
+          <option value="story">Story</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="priority" class="block text-lg font-medium mb-2">Priority</label>
+        <select id="priority" name="priority" class="w-full px-4 py-2 border rounded-md">
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="project" class="block text-lg font-medium mb-2">Project</label>
+        <select id="project" name="project" class="w-full px-4 py-2 border rounded-md">
+          {% for project in projects %}
+          <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="assignee" class="block text-lg font-medium mb-2">Assign to</label>
+        <select id="assignee" name="assignee" class="w-full px-4 py-2 border rounded-md">
+          {% for member in team_members %}
+          <option value="{{ member.id }}">{{ member.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+      <div>
+        <label for="start_date" class="block text-lg font-medium mb-2">Start Date</label>
+        <input type="date" id="start_date" name="start_date" class="w-full px-4 py-2 border rounded-md">
+      </div>
+      <div>
+        <label for="end_date" class="block text-lg font-medium mb-2">End Date</label>
+        <input type="date" id="end_date" name="end_date" class="w-full px-4 py-2 border rounded-md">
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <label class="inline-flex items-center">
+        <input type="checkbox" name="public" class="form-checkbox text-blue-600">
+        <span class="ml-2 text-gray-700">Public Ticket</span>
+      </label>
+    </div>
+
+    <div class="flex justify-end gap-4 mt-8">
+      <a href="{{ url_for('dashboard') }}" class="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancel</a>
+      <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create Ticket</button>
+    </div>
+  </form>
+</main>
+{% endblock %}
+</create_file>

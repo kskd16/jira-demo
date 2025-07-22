@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Reassign Ticket{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Reassign Ticket: {{ ticket.title }}</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ ticket.title }}</h5>
+            <h6 class="card-subtitle mb-2 text-muted">{{ ticket.type }} - {{ ticket.priority }}</h6>
+            <p class="card-text">{{ ticket.description }}</p>
+            <p><strong>Current Assignee:</strong> {{ ticket.assignee }}</p>
+            <p><strong>Status:</strong> {{ ticket.status }}</p>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('reassign_ticket', ticket_id=ticket.id) }}">
+        <div class="mb-3">
+            <label for="assignee_id" class="form-label">New Assignee</label>
+            <select class="form-select" id="assignee_id" name="assignee_id" required>
+                <option value="" selected disabled>Select a team member</option>
+                {% for member in team_members %}
+                <option value="{{ member.id }}">{{ member.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Reassign Ticket</button>
+        <a href="{{ url_for('board_page') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

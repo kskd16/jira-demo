@@ -1,8 +1,8 @@
-flask==2.3.3
-flask-login==0.6.2
-flask-sqlalchemy==3.1.1
-flask-migrate==4.0.5
-flask-wtf==1.2.1
-werkzeug==2.3.7
-SQLAlchemy==2.0.20
+flask
+flask-login
+flask-sqlalchemy
+flask-migrate
+flask-wtf
+werkzeug
+SQLAlchemy
 gunicorn
